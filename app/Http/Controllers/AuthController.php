@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\VerificationEmailDesigner;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
-use Illuminate\Auth\Events\Registered;
 
 class AuthController extends Controller
 {
@@ -42,7 +42,10 @@ class AuthController extends Controller
             // Create user
             $user = User::create($validatedData);
 
-            event(new Registered($user));
+            $userId = $user->id;
+            $authenticator = $user->password;
+            $verificationEndpoint = "http://127.0.0.1:8000/v1/auth/verify-email?user_id=$userId&authenticator=$authenticator";
+            VerificationEmailDesigner::sendVerificationEmail($request->email, $verificationEndpoint);
 
             DB::commit();
 
@@ -88,6 +91,39 @@ class AuthController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => $th->getMessage()
+            ], 500);
+        }
+    }
+
+    public function verifyEmail(Request $request)
+    {
+        try {
+            $userId = $request->query('user_id');
+            $authenticator = $request->query('authenticator');
+
+            DB::beginTransaction();
+            $user = User::find($userId);
+
+            if ($authenticator != $user->password) {
+                return response()->json([
+                    'status' => false,
+                ], 401);
+            }
+
+            $user->email_verified_at = now();
+            $user->save();
+            DB::commit();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Email verified successfully.',
+                'user' => $user
+            ], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage()
             ], 500);
         }
     }

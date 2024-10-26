@@ -84,3 +84,14 @@ If encountering `personal_access_token 'id' column has no default value` after u
         }
     }
     ```
+
+### Using AWS SDK for PHP
+- `composer require aws/aws-sdk-php-laravel`
+- Put the following in your `.env` file
+    ```
+    AWS_ACCESS_KEY_ID=your-access-key-id
+    AWS_SECRET_ACCESS_KEY=your-secret-access-key
+    AWS_DEFAULT_REGION=us-east-1 # or your desired region
+    AWS_SES_REGION=us-east-1 # or your SES region
+    ```
+- `php artisan vendor:publish --provider="Aws\Laravel\AwsServiceProvider"`: This will add an `aws.php` file in your `config` folder. If it doesn't work, there's probably a typo.
