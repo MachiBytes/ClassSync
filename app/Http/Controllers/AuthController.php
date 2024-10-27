@@ -41,11 +41,8 @@ class AuthController extends Controller
 
             // Create user
             $user = User::create($validatedData);
-
-            $userId = $user->id;
-            $authenticator = $user->password;
-            $verificationEndpoint = "http://127.0.0.1:8000/v1/auth/verify-email?user_id=$userId&authenticator=$authenticator";
-            VerificationEmailDesigner::sendVerificationEmail($request->email, $verificationEndpoint);
+            
+            VerificationEmailDesigner::sendVerificationEmail($user);
 
             DB::commit();
 
@@ -81,10 +78,12 @@ class AuthController extends Controller
 
             $user = User::where('email', $request->email)->first();
 
+            $token = $user->login();
+
             return response()->json([
                 'status' => true,
                 'message' => 'User logged in successfully.',
-                'token' => $user->createToken('API TOKEN')->plainTextToken
+                'token' => $token
             ],);
 
         } catch (\Throwable $th) {

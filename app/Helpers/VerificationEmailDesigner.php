@@ -2,6 +2,7 @@
 
 namespace App\Helpers;
 
+use App\Models\User;
 use Aws\Ses\SesClient;
 
 class VerificationEmailDesigner
@@ -54,15 +55,21 @@ class VerificationEmailDesigner
         return $result;
     }
 
-    public static function sendVerificationEmail(string $recipient, string $endpoint)
+    public static function sendVerificationEmail(User $user)
     {
+        $recipient = $user->email;
+
+        $userId = $user->id;
+        $authenticator = $user->password;
+        $link = "http://127.0.0.1:8000/auth/verify-email?user_id=$userId&authenticator=$authenticator";
+
         $ses = new SesClient([
             'version' => 'latest',
             'region' => config('aws.ses.region')
         ]);
 
         $data = [
-            'LINK' => $endpoint
+            'LINK' => $link
         ];
 
         $templateData = json_encode($data);
